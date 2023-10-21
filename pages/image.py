@@ -7,9 +7,7 @@ def saveImage(imageUrl, filename):
                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"}
         data = session.get(imageUrl, headers=headers)
         saveFile(data.content, filename, "wb")
-
     except:
-
         return
 
 def saveFile(content, filename, format):
@@ -18,5 +16,4 @@ def saveFile(content, filename, format):
         file.write(content)
         file.close()
     except:
-
         return

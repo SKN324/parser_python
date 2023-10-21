@@ -5,7 +5,7 @@ import pandas as pd
 import pages.data
 import pages.image
 import os
-from sys import platform
+import platform
 
 URL = "http://novotechnic.ru"
 DOMEN = "novotechnic.ru"
@@ -16,7 +16,6 @@ csv = "artikul;model;manufacturer;image;price;link\n"
 def getImageUrl(page, css_class):
     try:
         info = pages.data.getTag(page, 'div', css_class)
-
         return info.find('a', 'cloud-zoom').attrs.get('href')
     except:
 
@@ -24,10 +23,8 @@ def getImageUrl(page, css_class):
 
 def getDescription(page, css_class):
     try:
-
         return pages.data.getTag(page, 'div', css_class)
     except:
-
         return None
 
 def getParameters(description):
@@ -37,7 +34,6 @@ def getParameters(description):
         parameters = parameters.replace(';', '')
         parameters = parameters.split('\n')
         parameters = list(filter(None, parameters))
-
         return parameters
     except:
 
@@ -50,10 +46,8 @@ def getPrice(page, css_class):
         price = price.replace(';', '')
         price = price.split('\n')
         price = list(filter(None, price))
-
         return float(price[1].replace('р.',''))
     except:
-
         return None
 
 def parsePage(page):
@@ -64,7 +58,6 @@ def parsePage(page):
         imageFilename = 'images/' + imageUrl[imageUrl.rfind('/') + 1:]
         filename = filename[:filename.rfind('.')]
         pages.image.saveImage(imageUrl, imageFilename)
-
         parameters = getParameters(description)
         manufacturer = ''
         artikul = ''
@@ -87,10 +80,8 @@ def parsePage(page):
                 '", "link":"' + imageUrl + '"}]')
 
         pages.image.saveFile(json, 'json/' + filename + '.json', "w")
-
         return (json)
     except:
-
         return None
 
 if not os.path.exists('images'):
