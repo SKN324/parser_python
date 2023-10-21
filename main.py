@@ -130,7 +130,12 @@ for link in linksGoods:
 pages.image.saveFile(str(goods), 'result.json', 'w')
 for good in goods:
     good = json.loads(good)
-    csv += good[0]['artikul'] + ";" + good[0]['model'] + ";" + good[0]['manufacturer'] + ";" + good[0]['image'] + ";" + good[0]['price'] + ";" + good[0]['link'] + "\n"
+    csv += (good[0]['artikul'] + ";"
+            + good[0]['model'] + ";"
+            + good[0]['manufacturer'] + ";"
+            + good[0]['image'] + ";"
+            + good[0]['price'] + ";"
+            + good[0]['link'] + "\n")
 
 try:
     pages.image.saveFile(csv, 'result.csv', 'w')
