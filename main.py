@@ -10,24 +10,90 @@ import platform
 URL = "http://novotechnic.ru"
 DOMEN = "novotechnic.ru"
 
-down = []
-csv = "artikul;model;manufacturer;image;price;link\n"
+def make_directories():
+    if not os.path.exists('images'):
+        os.makedirs('images')
+    if not os.path.exists('json'):
+        os.makedirs('json')
 
-def getImageUrl(page, css_class):
+def make_csv(goods):
+    csv = "artikul;model;manufacturer;image;price;link\n"
+    for good in goods:
+        good = json.loads(good)
+        csv += (good[0]['artikul'] + ";"
+                + good[0]['model'] + ";"
+                + good[0]['manufacturer'] + ";"
+                + good[0]['image'] + ";"
+                + good[0]['price'] + ";"
+                + good[0]['link'] + "\n")
+    return csv
+
+def main():
+    make_directories()
+    down = []
+
+    page = pages.data.get_page(URL)
+    links = pages.data.get_child_urls(page)
+    links_categories = []
+    links_goods = []
+    for link in links:
+        if link.find(DOMEN) >= 0 and link.find('?') < 0 and link != URL:
+            if not link in down:
+                child_page = pages.data.get_page(link)
+                if pages.data.is_page_matched(child_page, 'div', 'category-info'):
+                    links_categories.append(link)
+                    child_page_links = pages.data.get_child_urls(child_page)
+                    for child_link in child_page_links:
+                        if (child_link.find(DOMEN) >= 0
+                                and child_link.find('?') < 0
+                                and child_link != URL
+                                and not child_link in links_goods):
+                            links_goods.append(child_link)
+                else:
+                    if not pages.data.is_page_matched(child_page, 'div', 'product-info'):
+                        down.append(link)
+
+    for link in down:
+        if link in links_goods:
+            list.remove(links_goods, link)
+    for link in links_categories:
+        if link in links_goods:
+            list.remove(links_goods, link)
+
+    goods = []
+    for link in links_goods:
+        page = pages.data.get_page(link)
+        if pages.data.is_page_matched(page, 'div', 'product-info'):
+            goods.append(parse_page(page))
+
+    pages.image.save_file(str(goods), 'result.json', 'w')
+
+    csv = make_csv(goods)
+
     try:
-        info = pages.data.getTag(page, 'div', css_class)
+        pages.image.save_file(csv, 'result.csv', 'w')
+        if platform == 'win32' or platform == 'win64':
+            df = pd.read_csv('result.csv', sep=';', encoding='windows-1251')
+        else:
+            df = pd.read_csv('result.csv', sep=';')
+        df.to_excel('result.xlsx')
+    except:
+        None
+
+def get_image_url(page, css_class):
+    try:
+        info = pages.data.get_tag(page, 'div', css_class)
         return info.find('a', 'cloud-zoom').attrs.get('href')
     except:
-
         return None
 
-def getDescription(page, css_class):
+def get_description(page, css_class):
     try:
-        return pages.data.getTag(page, 'div', css_class)
+        return pages.data.get_tag(page, 'div', css_class)
     except:
         return None
 
-def getParameters(description):
+def get_parameters(description):
     try:
         parameters = description.text
         parameters = parameters.replace(' ', '')
@@ -39,9 +105,9 @@ def getParameters(description):
 
         return None
 
-def getPrice(page, css_class):
+def get_price(page, css_class):
     try:
-        price = pages.data.getTag(page, 'div', css_class).text
+        price = pages.data.get_tag(page, 'div', css_class).text
         price = price.replace(' ', '')
         price = price.replace(';', '')
         price = price.split('\n')
@@ -50,15 +116,15 @@ def getPrice(page, css_class):
     except:
         return None
 
-def parsePage(page):
+def parse_page(page):
     try:
-        description = getDescription(page, 'description')
-        imageUrl = getImageUrl(page, 'product-info')
-        filename = imageUrl[imageUrl.rfind('/') + 1:]
-        imageFilename = 'images/' + imageUrl[imageUrl.rfind('/') + 1:]
+        description = get_description(page, 'description')
+        image_url = get_image_url(page, 'product-info')
+        filename = image_url[image_url.rfind('/') + 1:]
+        image_filename = 'images/' + image_url[image_url.rfind('/') + 1:]
         filename = filename[:filename.rfind('.')]
-        pages.image.saveImage(imageUrl, imageFilename)
-        parameters = getParameters(description)
+        pages.image.save_image(image_url, image_filename)
+        parameters = get_parameters(description)
         manufacturer = ''
         artikul = ''
         model = ''
@@ -71,72 +137,17 @@ def parsePage(page):
                 model = parameter[parameter.find(':') + 1:]
         if artikul == '':
             artikul = model
-        price = getPrice(page, 'price')
+        price = get_price(page, 'price')
         json = ('[{"artikul":"' + artikul +
                 '", "model":"' + model +
                 '", "manufacturer":"' + manufacturer +
-                '", "image":"' + imageFilename +
+                '", "image":"' + image_filename +
                 '", "price":"' + str(price) +
-                '", "link":"' + imageUrl + '"}]')
-
-        pages.image.saveFile(json, 'json/' + filename + '.json', "w")
+                '", "link":"' + image_url + '"}]')
+        pages.image.save_file(json, 'json/' + filename + '.json', "w")
         return (json)
     except:
         return None
 
-if not os.path.exists('images'):
-    os.makedirs('images')
-if not os.path.exists('json'):
-    os.makedirs('json')
-
-page = pages.data.getPage(URL)
-
-links = pages.data.getChildUrls(page)
-linksCategories = []
-linksGoods = []
-for link in links:
-    if link.find(DOMEN) >= 0 and link.find('?') < 0 and link != URL:
-        if not link in down:
-            childPage = pages.data.getPage(link)
-            if pages.data.isPageMatched(childPage, 'div', 'category-info'):
-                linksCategories.append(link)
-                childPageLinks = pages.data.getChildUrls(childPage)
-                for childLink in childPageLinks:
-                    if childLink.find(DOMEN) >= 0 and childLink.find('?') < 0 and childLink != URL and not childLink in linksGoods:
-                        linksGoods.append(childLink)
-            else:
-                if not pages.data.isPageMatched(childPage, 'div', 'product-info'):
-                    down.append(link)
-
-for link in down:
-    if link in linksGoods:
-        list.remove(linksGoods, link)
-for link in linksCategories:
-    if link in linksGoods:
-        list.remove(linksGoods, link)
-
-goods = []
-for link in linksGoods:
-    page = pages.data.getPage(link)
-    if pages.data.isPageMatched(page, 'div', 'product-info'):
-        goods.append(parsePage(page))
-
-pages.image.saveFile(str(goods), 'result.json', 'w')
-for good in goods:
-    good = json.loads(good)
-    csv += (good[0]['artikul'] + ";"
-            + good[0]['model'] + ";"
-            + good[0]['manufacturer'] + ";"
-            + good[0]['image'] + ";"
-            + good[0]['price'] + ";"
-            + good[0]['link'] + "\n")
-
-try:
-    pages.image.saveFile(csv, 'result.csv', 'w')
-    if platform == 'win32' or platform == 'win64':
-        df = pd.read_csv('result.csv', sep=';', encoding='windows-1251')
-    else:
-        df = pd.read_csv('result.csv', sep=';')
-    df.to_excel('result.xlsx')
-except:
-    None
+if __name__ == '__main__':
+    main()
