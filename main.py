@@ -17,12 +17,13 @@ def make_directories():
         os.makedirs('json')
 
 def make_csv(goods):
-    csv = "artikul;model;manufacturer;image;price;link\n"
+    csv = "artikul;model;manufacturer;description;image;price;link\n"
     for good in goods:
         good = json.loads(good)
         csv += (good[0]['artikul'] + ";"
                 + good[0]['model'] + ";"
                 + good[0]['manufacturer'] + ";"
+                + good[0]['description'] + ";"
                 + good[0]['image'] + ";"
                 + good[0]['price'] + ";"
                 + good[0]['link'] + "\n")
@@ -138,12 +139,13 @@ def parse_page(page):
         if artikul == '':
             artikul = model
         price = get_price(page, 'price')
-        json = ('[{"artikul":"' + artikul +
-                '", "model":"' + model +
-                '", "manufacturer":"' + manufacturer +
-                '", "image":"' + image_filename +
-                '", "price":"' + str(price) +
-                '", "link":"' + image_url + '"}]')
+        json = ('[{"artikul":"' + artikul
+                + '", "model":"' + model
+                + '", "manufacturer":"' + manufacturer
+                + '", "description":"' + description
+                + '", "image":"' + image_filename
+                + '", "price":"' + str(price)
+                + '", "link":"' + image_url + '"}]')
         pages.image.save_file(json, 'json/' + filename + '.json', "w")
         return (json)
     except:
