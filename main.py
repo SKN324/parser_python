@@ -17,10 +17,11 @@ def make_directories():
         os.makedirs('json')
 
 def make_csv(goods):
-    csv = "artikul;model;manufacturer;description;image;price;link\n"
+    csv = "name;artikul;model;manufacturer;description;image;price;link\n"
     for good in goods:
         good = json.loads(good)
-        csv += (good[0]['artikul'] + ";"
+        csv += (good[0]['name'] + ";"
+                + good[0]['artikul'] + ";"
                 + good[0]['model'] + ";"
                 + good[0]['manufacturer'] + ";"
                 + good[0]['description'] + ";"
@@ -68,16 +69,22 @@ def get_price(page, css_class):
 def get_product_description(page):
     try:
         product_description = pages.data.get_tag(page, 'div', 'tab-content').text
-        product_description = product_description.replace('"', '')
-        product_description = product_description.replace('\n', ' ')
-        product_description = product_description.replace('\t', ' ')
-        product_description = product_description.replace(';', '.')
+        product_description = string_replace(product_description)
         return product_description
     except:
         return None
 
+def string_replace(str):
+    str = str.replace('"', '')
+    str = str.replace('\n', ' ')
+    str = str.replace('\t', ' ')
+    str = str.replace(';', '.')
+    return str
+
 def parse_page(page):
     try:
+        name = pages.data.get_tag(page, 'h1', '').text
+        name = string_replace(name)
         description = get_description(page, 'description')
         product_description = get_product_description(page)
         image_url = get_image_url(page, 'product-info')
@@ -99,7 +106,8 @@ def parse_page(page):
         if artikul == '':
             artikul = model
         price = get_price(page, 'price')
-        json = ('[{"artikul":"' + artikul
+        json = ('[{"name":"' + name
+                + '", "artikul":"' + artikul
                 + '", "model":"' + model
                 + '", "manufacturer":"' + manufacturer
                 + '", "description":"' + str(product_description)
