@@ -29,6 +29,87 @@ def make_csv(goods):
                 + good[0]['link'] + "\n")
     return csv
 
+def get_image_url(page, css_class):
+    try:
+        info = pages.data.get_tag(page, 'div', css_class)
+        return info.find('a', 'cloud-zoom').attrs.get('href')
+    except:
+        return None
+
+def get_description(page, css_class):
+    try:
+        return pages.data.get_tag(page, 'div', css_class)
+    except:
+        return None
+
+def get_parameters(description):
+    try:
+        parameters = description.text
+        parameters = parameters.replace(' ', '')
+        parameters = parameters.replace(';', '')
+        parameters = parameters.split('\n')
+        parameters = list(filter(None, parameters))
+        return parameters
+    except:
+
+        return None
+
+def get_price(page, css_class):
+    try:
+        price = pages.data.get_tag(page, 'div', css_class).text
+        price = price.replace(' ', '')
+        price = price.replace(';', '')
+        price = price.split('\n')
+        price = list(filter(None, price))
+        return float(price[1].replace('р.',''))
+    except:
+        return None
+
+def get_product_description(page):
+    try:
+        product_description = pages.data.get_tag(page, 'div', 'tab-content').text
+        product_description = product_description.replace('"', '')
+        product_description = product_description.replace('\n', ' ')
+        product_description = product_description.replace('\t', ' ')
+        return product_description
+    except:
+        return None
+
+def parse_page(page):
+    try:
+        description = get_description(page, 'description')
+        product_description = get_product_description(page)
+        image_url = get_image_url(page, 'product-info')
+        filename = image_url[image_url.rfind('/') + 1:]
+        image_filename = 'images/' + image_url[image_url.rfind('/') + 1:]
+        filename = filename[:filename.rfind('.')]
+        pages.image.save_image(image_url, image_filename)
+        parameters = get_parameters(description)
+        manufacturer = ''
+        artikul = ''
+        model = ''
+        for parameter in parameters:
+            if parameter.find('Производитель') >= 0:
+                manufacturer = parameter[parameter.find(':') + 1:]
+            if parameter.find('Артикул') >= 0:
+                artikul = parameter[parameter.find(':') + 1:]
+            if parameter.find('Модель') >= 0:
+                model = parameter[parameter.find(':') + 1:]
+        if artikul == '':
+            artikul = model
+        price = get_price(page, 'price')
+        json = ('[{"artikul":"' + artikul
+                + '", "model":"' + model
+                + '", "manufacturer":"' + manufacturer
+                + '", "description":"' + str(product_description)
+                + '", "image":"' + image_filename
+                + '", "price":"' + str(price)
+                + '", "link":"' + image_url + '"}]')
+        pages.image.save_file(json, 'json/' + filename + '.json', "w")
+        return (json)
+    except:
+        return None
+
 def main():
     make_directories()
     down = []
@@ -80,76 +161,6 @@ def main():
         df.to_excel('result.xlsx')
     except:
         None
-
-def get_image_url(page, css_class):
-    try:
-        info = pages.data.get_tag(page, 'div', css_class)
-        return info.find('a', 'cloud-zoom').attrs.get('href')
-    except:
-        return None
-
-def get_description(page, css_class):
-    try:
-        return pages.data.get_tag(page, 'div', css_class)
-    except:
-        return None
-
-def get_parameters(description):
-    try:
-        parameters = description.text
-        parameters = parameters.replace(' ', '')
-        parameters = parameters.replace(';', '')
-        parameters = parameters.split('\n')
-        parameters = list(filter(None, parameters))
-        return parameters
-    except:
-
-        return None
-
-def get_price(page, css_class):
-    try:
-        price = pages.data.get_tag(page, 'div', css_class).text
-        price = price.replace(' ', '')
-        price = price.replace(';', '')
-        price = price.split('\n')
-        price = list(filter(None, price))
-        return float(price[1].replace('р.',''))
-    except:
-        return None
-
-def parse_page(page):
-    try:
-        description = get_description(page, 'description')
-        image_url = get_image_url(page, 'product-info')
-        filename = image_url[image_url.rfind('/') + 1:]
-        image_filename = 'images/' + image_url[image_url.rfind('/') + 1:]
-        filename = filename[:filename.rfind('.')]
-        pages.image.save_image(image_url, image_filename)
-        parameters = get_parameters(description)
-        manufacturer = ''
-        artikul = ''
-        model = ''
-        for parameter in parameters:
-            if parameter.find('Производитель') >= 0:
-                manufacturer = parameter[parameter.find(':') + 1:]
-            if parameter.find('Артикул') >= 0:
-                artikul = parameter[parameter.find(':') + 1:]
-            if parameter.find('Модель') >= 0:
-                model = parameter[parameter.find(':') + 1:]
-        if artikul == '':
-            artikul = model
-        price = get_price(page, 'price')
-        json = ('[{"artikul":"' + artikul
-                + '", "model":"' + model
-                + '", "manufacturer":"' + manufacturer
-                + '", "description":"' + description
-                + '", "image":"' + image_filename
-                + '", "price":"' + str(price)
-                + '", "link":"' + image_url + '"}]')
-        pages.image.save_file(json, 'json/' + filename + '.json', "w")
-        return (json)
-    except:
-        return None
 
 if __name__ == '__main__':
     main()
