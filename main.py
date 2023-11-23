@@ -71,6 +71,7 @@ def get_product_description(page):
         product_description = product_description.replace('"', '')
         product_description = product_description.replace('\n', ' ')
         product_description = product_description.replace('\t', ' ')
+        product_description = product_description.replace(';', '.')
         return product_description
     except:
         return None
@@ -154,10 +155,7 @@ def main():
 
     try:
         pages.image.save_file(csv, 'result.csv', 'w')
-        if platform == 'win32' or platform == 'win64':
-            df = pd.read_csv('result.csv', sep=';', encoding='windows-1251')
-        else:
-            df = pd.read_csv('result.csv', sep=';')
+        df = pd.read_csv('result.csv', sep=';', encoding='windows-1251')
         df.to_excel('result.xlsx')
     except:
         None
