@@ -37,12 +37,6 @@ def get_image_url(page, css_class):
     except:
         return None
 
-def get_description(page, css_class):
-    try:
-        return pages.data.get_tag(page, 'div', css_class)
-    except:
-        return None
-
 def get_parameters(description):
     try:
         parameters = description.text
@@ -85,11 +79,11 @@ def parse_page(page):
     try:
         name = pages.data.get_tag(page, 'h1', '').text
         name = string_replace(name)
-        description = get_description(page, 'description')
+        description = pages.data.get_tag(page, 'div', 'description')
         product_description = get_product_description(page)
         image_url = get_image_url(page, 'product-info')
         filename = image_url[image_url.rfind('/') + 1:]
-        image_filename = 'images/' + image_url[image_url.rfind('/') + 1:]
+        image_filename = 'images/' + filename
         filename = filename[:filename.rfind('.')]
         pages.image.save_image(image_url, image_filename)
         parameters = get_parameters(description)
